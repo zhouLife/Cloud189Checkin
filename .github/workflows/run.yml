@@ -25,7 +25,7 @@ jobs:
           node-version: 18
           cache: npm
 
-      - name: 👾 Check if Debug is true 
+      - name: 👾 Check if Debug is true
         if: vars.debug == '1'
         run: |
           echo "CLOUD189_VERBOSE=1" >> $GITHUB_ENV
