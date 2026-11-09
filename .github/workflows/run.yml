@@ -8,7 +8,6 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    environment: user
     steps:
       - name: 🔀 random delay 0-300 seconds
         run: sleep $((RANDOM % 301))
@@ -34,23 +33,20 @@ jobs:
           key: ${{ runner.os }}-cache-token
           restore-keys: ${{ runner.os }}-cache-token-
 
+      # 使用原生 shell 生成 .env，不再调用第三方插件和 toJSON(secrets)
       - name: 🔧 Init secrets
-        uses: shine1594/secrets-to-env-action@v1.2.0
-        with:
-          secrets: ${{ toJSON(secrets) }}
-          secrets_env: production
-          prefix_prod: ""
-          file_name_prod: .env
+        env:
+          USER: ${{ secrets.USER }}
+          PWD: ${{ secrets.PWD }}
+        run: |
+          echo "USER=${USER}" >> .env
+          echo "PWD=${PWD}" >> .env
 
       - name: 📡 Init dependencies
         run: npm install
 
       - name: 🚀 Run
-        uses: nick-fields/retry@v3
-        with:
-          timeout_minutes: 30
-          max_attempts: 3
-          command: npm start
+        run: npm start
 
       - name: 📹 Save cached Cookie
         uses: actions/cache/save@v4
