@@ -1,13 +1,10 @@
 name: Cloud check in action
+
 on:
-  push:
-    branches:
-      - main
-  watch:
-    types: started
   workflow_dispatch:
   schedule:
-    - cron: 35 2 * * *
+    - cron: '35 2 * * *'
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -17,19 +14,18 @@ jobs:
         run: sleep $((RANDOM % 301))
 
       - name: 🔌 Check out code
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
 
       - name: 🔨 Setup Node.js environment
-        uses: actions/setup-node@main
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           cache: npm
 
       - name: 👾 Check if Debug is true
         if: vars.debug == '1'
-        run: |
-          echo "CLOUD189_VERBOSE=1" >> $GITHUB_ENV
-      
+        run: echo "CLOUD189_VERBOSE=1" >> $GITHUB_ENV
+
       - name: 📹 Restore cached Cookie
         id: cache-cookie-restore
         uses: actions/cache/restore@v4
@@ -39,7 +35,7 @@ jobs:
           restore-keys: ${{ runner.os }}-cache-token-
 
       - name: 🔧 Init secrets
-        uses: shine1594/secrets-to-env-action@master
+        uses: shine1594/secrets-to-env-action@v1.2.0
         with:
           secrets: ${{ toJSON(secrets) }}
           secrets_env: production
@@ -50,30 +46,20 @@ jobs:
         run: npm install
 
       - name: 🚀 Run
-        uses: nick-fields/retry@master
+        uses: nick-fields/retry@v3
         with:
           timeout_minutes: 30
           max_attempts: 3
           command: npm start
-      
+
       - name: 📹 Save cached Cookie
         uses: actions/cache/save@v4
         with:
           path: .token
           key: ${{ runner.os }}-cache-token-${{ hashFiles('.token/*.json') }}
 
-      - name: 🚗 Keep Running
-        if: github.event_name == 'schedule'
-        run: |
-          git config --local user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
-          git config --local user.name "${{ github.actor }}"
-          git remote set-url origin https://${{ github.actor }}:${{ github.token }}@github.com/${{ github.repository }}
-          git pull --rebase --autostash
-          git commit --allow-empty -m "Keep Running..."
-          git push
-
       - name: 🎉 Delete old workflow run
-        uses: Mattraks/delete-workflow-runs@main
+        uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
